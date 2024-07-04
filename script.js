@@ -14,6 +14,7 @@ const inputElevation = document.querySelector(".form__input--elevation");
 class Workout {
   date = new Date();
   id = (Date.now() + " ").slice(-10);
+  clicks = 0;
   constructor(coords, distance, duration) {
     // this.date =...
     // this.id=...
@@ -27,6 +28,9 @@ class Workout {
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       month[this.date.getMonth()]
     } ${this.date.getDate()}`;
+  }
+  click() {
+    this.clicks++;
   }
 }
 
@@ -69,9 +73,13 @@ class App {
   #mapZoomLevel = 13;
   #mapEvent;
   #workouts = [];
-  constructor() {
-    this._getPosition();
 
+  constructor() {
+    //Get user's position
+    this._getPosition();
+    //Get data from local storage
+    this._getLocalStorage();
+    //attach event handlers
     form.addEventListener("submit", this._newWorkout.bind(this));
 
     inputType.addEventListener("change", this._toggleElevationField);
@@ -110,6 +118,10 @@ class App {
 
     //Handling clicks on map
     this.#map.on("click", this._showFrom.bind(this));
+
+    this.#workouts.forEach((work) => {
+      this._renderWorkoutMarker(work);
+    });
   }
   _showFrom(mapE) {
     this.#mapEvent = mapE;
@@ -182,12 +194,8 @@ class App {
     this._renderWorkout(workout);
     //Hide form +clear input fields
     this._hideForm();
-    //clear input field
-    inputCadience.value =
-      inputDistance.value =
-      inputDuration.value =
-      inputElevation.value =
-        "";
+    //Set local storage to all workouts
+    this._setLocalStorage();
   }
   _renderWorkoutMarker(workout) {
     //Display marker
@@ -271,6 +279,25 @@ class App {
         duration: 1,
       },
     });
+    //using the public interface
+    workout.click();
+  }
+  _setLocalStorage() {
+    localStorage.setItem("workouts", JSON.stringify(this.#workouts));
+  }
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem("workouts"));
+    console.log(data);
+
+    if (!data) return;
+    this.#workouts = data;
+    this.#workouts.forEach((work) => {
+      this._renderWorkout(work);
+    });
+  }
+  reset() {
+    localStorage.removeItem("workouts");
+    location.reload();
   }
 }
 
